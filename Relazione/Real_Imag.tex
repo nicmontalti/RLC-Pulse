@@ -1,0 +1,44 @@
+\documentclass[crop,tikz]{standalone}
+\usepackage{pgfplots}
+\usepackage{siunitx}
+\usetikzlibrary{pgfplots.groupplots}
+
+\begin{document}
+\begin{tikzpicture}
+\pgfplotsset{set layers, compat=1.17, label style={font=\large}, tick style={font=\large}
+}
+
+\begin{groupplot}[
+    group style={
+        group name=my plots,
+        group size=1 by 2,
+        xlabels at=edge bottom,
+        xticklabels at=edge bottom,
+        vertical sep=0pt
+    },
+    scale only axis, clip mode=individual, xmode=log, xlabel=Frequenza (kHz), domain=1:45, samples=100, xmin=1, xmax=250,  xtick pos=left, ytick pos=bottom, xmajorgrids, xminorgrids, xticklabels={1, 10, 100}, ymajorgrids, width=10cm, height=5cm, y tick label style={
+        /pgf/number format/.cd,
+            fixed,
+            fixed zerofill,
+            precision=1,
+        /tikz/.cd
+    }, extra x ticks = {200}, extra x tick labels={}
+]
+
+%\begin{axis}[
+%scale only axis, clip mode=individual, xmode=log, xlabel=Frequenza (kHz), ylabel=Ampiezza (u.a.), domain=1:45, samples=100, xmin=1, xmax=200, mark size=1.7pt, xtick pos=left, ytick pos=bottom, xmajorgrids, xminorgrids, xticklabels={1, 10, 100}, ymajorgrids
+%]
+
+\nextgroupplot[ylabel=Parte reale (\si{\micro\volt})]
+\addplot[only marks, color=black!60] table [x=freqs, y=real, col sep=comma]{../analysis/fft_results.csv};
+\addplot [no marks, line width=1.2pt] table [x=fit_freqs, y=fit_real, col sep=comma]{../analysis/fft_fit_results.csv};
+
+\nextgroupplot[ylabel=Parte immaginaria (\si{\micro\volt})]
+\addplot[only marks, color=red!70!black!60] table [x=freqs, y=imag, col sep=comma]{../analysis/fft_results.csv};
+\addplot [no marks, line width=1.2pt, color=red!70!black] table [x=fit_freqs, y=fit_imag, col sep=comma]{../analysis/fft_fit_results.csv};
+
+\end{groupplot}
+%\end{axis}
+
+\end{tikzpicture}
+\end{document}

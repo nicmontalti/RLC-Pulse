@@ -1,0 +1,35 @@
+\documentclass[crop,tikz]{standalone}
+\usepackage{pgfplots}
+
+\begin{document}
+\begin{tikzpicture}
+\pgfplotsset{set layers, compat=1.4}
+
+
+\begin{axis}[
+scale only axis, xmode=log, xlabel=Frequenza (kHz), ylabel=Ampiezza (u.a.), domain=1:45, samples=100, xmin=1, xmax=45, ymin=0, mark size=1.5pt, xtick={1, 2, 4.5, 10, 20, 45}, xticklabels={1, 2, 4.5, 10, 20, 45}, xtick pos=left, ytick pos=bottom, grid=major
+]
+
+\addplot[only marks] table [x=freqs, y=amp, col sep=comma]{../analysis/fft_results.csv};
+\label{dati_ampiezza}
+
+\addplot [no marks] table [x=fit_freqs, y=fit_amp, col sep=comma]{../analysis/fft_fit_results.csv};
+\label{fit_ampiezza}
+
+\end{axis}
+
+\begin{axis}[
+scale only axis, grid=major, xmode=log, axis y line*=right, axis x line=none, ylabel=Fase (rad), xmode=log, domain=1:45, samples=1000, xmin=1, xmax=45, ymin=-3.5, ymax=0.5, mark size=1.5pt, ytick={-pi, -3*pi/4, -pi/2, -pi/4, 0}, yticklabels={$-\pi$, -$\frac{3}{4}\pi$, -$\frac{1}{2}\pi$, -$\frac{1}{4}\pi$, 0}
+]
+
+\addlegendimage{/pgfplots/refstyle=dati_ampiezza}\addlegendentry{Ampiezza}
+
+\addplot[only marks, color=red!80!black] table [x=freqs, y=phase, col sep=comma]{../analysis/fft_results.csv};
+\addlegendentry{Fase}
+
+\addplot [no marks, color=red!80!black] table [x=fit_freqs, y=fit_phase, col sep=comma]{../analysis/fft_fit_results.csv};
+
+\end{axis}
+
+\end{tikzpicture}
+\end{document}

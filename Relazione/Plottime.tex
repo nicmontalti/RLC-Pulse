@@ -1,0 +1,40 @@
+\documentclass[crop,tikz]{standalone}
+\usepackage{pgfplots}
+\begin{document}
+\begin{tikzpicture}
+\pgfplotsset{set layers, compat=1.17, label style={font=\large}, tick style={font=\large}
+}
+
+
+\begin{axis}[
+scale only axis, clip mode=individual, xlabel=Tempo (ms), ylabel=$V_C$ (V),xmin=0, xmax=1.6, xtick pos=left, ytick pos=bottom, grid=major, mark size = 1.5, y tick label style={
+        /pgf/number format/.cd,
+            fixed,
+            fixed zerofill,
+            precision=2,
+        /tikz/.cd
+    }, x tick label style={
+        /pgf/number format/.cd,
+            fixed,
+            fixed zerofill,
+            precision=1,
+        /tikz/.cd}
+]
+
+\addplot [color=black!60, mark=*, line width = 0.8pt, only marks] table [x=time, y=Vc, col sep=comma]{../analysis/time_results.csv};
+%\addlegendentry{Dati}
+
+\addplot [no marks, line width=1.2pt, color=black] table [x=time, y=Vc_fit, col sep=comma]{../analysis/time_fit_results.csv};
+%\addlegendentry{Fit}
+
+\end{axis}
+
+%\begin{axis}[
+%scale only axis, axis y line*=right, axis x line=none, ylabel=$V_G$ (V), xmin=0, xmax=1.7, mark size=1.5pt]
+
+%\addplot[color=red!80!black] table [x=time, y=Vs, col sep=comma]{../analysis/time_results.csv};
+
+%\end{axis}
+
+\end{tikzpicture}
+\end{document}

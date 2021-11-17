@@ -1,0 +1,210 @@
+\documentclass[12pt,a4paper, twocolumn]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english,italian]{babel}
+\DeclareUnicodeCharacter{2212}{-}
+
+\usepackage[left=2cm, right=2cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{caption}
+\captionsetup{tableposition=bottom,figureposition=bottom}
+\usepackage{appendix}
+\usepackage{subfig}
+\usepackage{dblfloatfix}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{lipsum}
+\usepackage{circuitikz}
+\usepackage{physics}
+\usepackage[shortlabels]{enumitem}
+\usepackage[autostyle,italian=guillemets]{csquotes}
+\usepackage[backend=biber, style=numeric, sorting=none]{biblatex}
+\addbibresource{Biblio.bib}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.14}
+\usepackage[mode=buildnew]{standalone}
+\usepackage{siunitx}
+\sisetup{separate-uncertainty}
+
+
+\captionsetup[figure]{labelfont={bf, footnotesize}, textfont=footnotesize}
+\captionsetup[table]{labelfont={bf, footnotesize}, textfont=footnotesize, position=top}
+
+
+\newcommand{\fourier}[1]{\mathcal{F}\left\{#1\right\}}
+\newcommand{\bs}[1]{\boldsymbol{#1}}
+\renewcommand{\appendixpagename}{Appendici}
+\graphicspath{{figure//}}
+
+\input{../analysis/variables.txt}
+
+
+\title{Analisi della risposta impulsiva di un circuito RLC\\ nel dominio del tempo e della frequenza}
+\author{Nicolò Montalti (933833)}
+\date{\today}
+
+\begin{document}
+
+
+\twocolumn[
+\begin{@twocolumnfalse}
+\maketitle
+\begin{otherlanguage}{english}
+\begin{abstract}
+In questo esperimento si è analizzata la risposta di un circuito RLC a un segnale impulsivo. Misurando la tensione ai capi del condensatore, si è cercato di risalire alla pulsazione di risonanza $\omega$ e al coefficiente di smorzamento $\gamma$, con valori attesi $\omega_0 = \SI{\vart0fft}{\kilo\hertz}$ e $\gamma = \SI{12.76(13)}{\kilo\hertz}$. L'analisi nel dominio del tempo ha restituito $\omega_0 = \SI{56.9312(9)}{\kilo\hertz}$ e $\gamma = \SI{14.530(2)}{\kilo\hertz}$. Attraverso una trasformata di Fourier sul segnale di risposta, calcolata grazie all'algoritmo FFT (fast Fourier tranform), è stata analizzata la risposta in frequenza, ottenendo $\omega_0 = \SI{57.0045(12)}{\kilo\hertz}$ e $\gamma = \SI{14.551(3)}{\kilo\hertz}$. L'esperimento ha permesso di approfondire il legame tra risposta impulsiva e in frequenza di un circuito, le proprietà dell'operatore trasformata di Fourier e gli algoritmi per il calcolo della trasformata di Fourier discreta.
+
+\vspace{1cm}
+\end{abstract}
+\end{otherlanguage}
+\end{@twocolumnfalse}
+]
+
+\section{Introduzione}
+Un circuito RLC serie è formato da una resistenza $R$, un condensatore $C$ e un induttore $L$ collegati in serie con un generatore. L'evoluzione del sistema è caratterizzata dall'equazione differenziale
+\begin{equation}
+\dv[2]{V_C}{t} + \gamma \dv{V_C}{t} + \omega_0^2 V_C = \omega_0^2 V_G(t)
+\label{eq:rlc_diff}
+\end{equation}
+dove $\gamma = R/L$, $\omega_0^2 = 1/LC$ e $V_C$ e $V_G$ sono rispettivamente la tensione ai capi del condensatore e del generatore. L'equazione può essere espressa nel dominio della frequenza applicando l'operatore trasformata di Fourier $\mathcal{F}$ ad entrambi i membri e definendo la funzione di trasferimento
+\begin{equation}
+H(\omega) = \frac{\fourier{V_C}}{\fourier{V_G}} = \frac{1}{1 - \left(\frac{\omega}{\omega_0}\right)^2 + j \frac{\gamma \omega}{\omega_0^2}}
+\label{eq:transfer_function}
+\end{equation}
+con $j$ unità immaginaria. La funzione $H(\omega)$ descrive la risposta del circuito a una forzante nel dominio della frequenza. In particolare, stimolando il circuito con un segnale sinusoidale di pulsazione $\omega$ e fasore $V_0 e^{i\phi_0}$, la tensione misurata ai capi del condensatore avrà fasore $H(\omega) \cdot V_0 e^{i\phi_0}$. In regime sottosmorzato ($\gamma < 2\omega_0$), la funzione $\left|H(\omega)\right|$ ha un massimo per $\omega_r = \sqrt{\omega_0^2 - \gamma^2 / 2}$, detta pulsazione di risonanza.
+
+Un altro caso di particolare interesse è la risposta impulsiva del circuito \cite{cafarelli2012rlc}. Matematicamente un impulso può essere modellizzato grazie alla funzione delta di Dirac $\delta(t)$. Stimolando il circuito con un impulso $V_G(t) = V_0 \delta(t)$, l'equazione (\ref{eq:rlc_diff}) ha come soluzione
+\begin{equation}
+V_C(t) = Ae^{- \gamma t / 2}\sin{(\omega_p t)}
+\label{eq:time_impulse}
+\end{equation}
+con $\omega_p = \sqrt{\omega_0^2 - \gamma^2 / 4}$ e $A$ parametro dipendente dalle condizioni iniziali e dall'area dell'impulso.
+
+Nel dominio della frequenza, ricordando che $\fourier{\delta(t)} = 1$ \cite{fourier}, si ha 
+\begin{equation}
+H(\omega) = \frac{\fourier{V_C}}{V_0}
+\label{eq:freqs_impulse}
+\end{equation}
+Stimolando il circuito con un segnale impulsivo e misurando la tensione ai capi del condensatore, le grandezze caratteristiche del circuito $\omega_0$ e $\gamma$ possono quindi essere determinate in due modi equivalenti: facendo un fit della funzione $V_C(t)$ (\ref{eq:time_impulse}) o eseguendo la trasformata di Fourier dei dati e tramite la relazione precedente fittare la funzione $H(\omega)$ (\ref{eq:transfer_function}).
+
+La trasformata di Fourier può essere eseguita numericamente grazie ad algoritmi come la \emph{trasformata di Fourier veloce} (FFT), che permettono di  calcolare in modo efficiente la \emph{trasformata di Fourier discreta} (DFT) \cite{numerical_recipes}. Dato un campione di $N$ punti $x_0 \dots x_{N-1}$ campionati a intervalli regolari di tempo $dt$, la loro DFT è data da
+\begin{equation}
+X_k = \sum_{n=0}^{N-1} x_n e^{-2 \pi jkn / N} \qquad k = 0 \dots N-1
+\label{eq:dft}
+\end{equation}
+e fornisce dei valori approssimati per la trasformata di Fourier continua della funzione $x(t)$. Se la funzione $\fourier{x(t)}$ si annulla per  frequenze maggiori della frequenza critica di Nyquist $1/2dt$, si può dimostrare che
+\begin{equation}
+\fourier{x(t)}\left(\frac{2\pi k}{N \cdot dt}\right) \simeq X_k \cdot dt
+\label{eq:dft_fourier}
+\end{equation}
+
+\section{Apparato sperimentale e svolgimento}
+
+\begin{figure}
+\centering
+\begin{circuitikz}[scale = 1]
+\draw (0,0)
+to[V=$V_G$] (0,2) % The voltage source
+to[R=$R_G$] (0,4)
+to[R=$R$] (4,4) % The resistor
+to[C=$C$] (4,0) % Capacitor One
+to[L=$L$] (2,0) %Inductor One
+to[R=$R_L$] (0,0)
+;
+\draw (4,1)
+to[short, -*] (5,1)
+to[open, l_=$V_C$] (5,3)
+to[short, *-] (4,3)
+;
+\end{circuitikz}
+\caption{Schema del circuito elettrico. Le resistenze $R_G$ e $R_L$ rappresentano rispettivamente la resistenza interna del generatore e la resistenza dell'induttore.}
+\label{fig:circuito}
+\end{figure}
+
+Per eseguire l'esperimento si è assemblato il circuito schematizzato in Fig. \ref{fig:circuito} sulla breadboard della scheda NI ELVIS II. I valori dei componenti sono stati misurati con il multimetro della scheda ELVIS, ottenendo $R = \SI{35.31 \pm 0.05}{\ohm}$, $C=\SI{32.0(3)}{\nano\farad}$, $L= \SI{10.17 (10)}{\milli\henry}$ e $R_L = \SI{41.41 \pm 0.05}{\ohm}$. La resistenza interna del generatore $R_G$ fornita dalle specifiche della scheda, risulta di \SI{50}{\ohm}. Dai parametri del circuito si attendono quindi dei valori $\gamma^\text{exp} = \SI{12.46(12)}{\kilo\hertz}$ e $\omega_0^\text{exp} = \SI{55.4(4)}{\kilo\hertz}$, corrispondente a una frequenza di risonanza $\nu_r^{\text{exp}} = 2\pi / \omega_r = \SI{8.70(6)}{\kilo\hertz}$.
+
+Attraverso un programma LabVIEW si è controllata la scheda ELVIS per generare impulsi con cui stimolare il circuito e per acquisire il segnale di risposta. Si è stimolato il circuito con impulsi di \SI{5}{\volt} di durata \SI{0.5}{\micro\second}, ripetuti a intervalli regolari di \SI{2}{\milli\second}. Impulsi di durata più breve sono difficili da generare ed immettono poca energia nel circuito, mentre impulsi di durata maggiore danno risultati non più approssimabili con una delta di Dirac. Il tempo tra un impulso e il successivo di \SI{2}{\milli\second} è sufficiente perché le oscillazioni siano smorzate completamente.
+
+L'acquisizione è stata eseguito su due canali in contemporanea, uno per misurare la tensione ai capi del condensatore ($V_C$) e l'altro ai capi del generatore ($V_G$). L'acquisizione era attivata da un trigger impostato sul canale del generatore con \emph{slope} in modalità \emph{rising} e \emph{level} di \SI{1}{\volt}. Il campionamento è stato eseguito a $\nu_c =\SI{500}{\kilo\hertz}$ e sono state raccolte sequenze di 800 campioni l'una, per una durata di \SI{1.6}{\milli\second} a campionamento. Confrontando $\nu_r^\text{exp}$ con $\nu_c$, ci si può aspettare che $H(\omega) \simeq 0$ per frequenze maggiori di $\nu_c/2$, giustificando l'uso dell'approssimazione ($\ref{eq:dft_fourier}$).
+
+\section{Risultati e discussione}
+\begin{table*}
+\caption{Valori attesi dei parametri $\omega_0$ e $\gamma$ e risultati dei fit nel dominio del tempo della frequenza. Le incertezze dei parametri attesi derivano da incertezze strumentali, mentre quelle derivanti dai fit sono errori standard.}
+\label{tab:params}
+\centering
+\begin{tabular}{lccc}
+\toprule
+Misura & $\omega_0$ (\si{\kilo\hertz}) & $\gamma$ (\si{\kilo\hertz}) & $t_0$ (\si{\micro\second})\\
+\midrule
+Valori attesi & $55.4 \pm 0.4 $ & $12.46 \pm 0.12$ & \\
+Dominio del tempo (Fig. \ref{fig:plot-time}) & $56.9832 \pm 0.0007$ &  $12.622 \pm 0.006$ & $0.467 \pm 0.006$ \\
+Dominio della frequenza (Fig. \ref{fig:plot-freqs}) & $56.509 \pm 0.003$ &  $12.604 \pm 0.006$ & $0.488 \pm 0.006$\\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsection{Dominio del tempo}
+\begin{figure}[t]
+\centering
+\includestandalone[width=0.95\linewidth]{Plottime}
+\caption{Grafico dell'andamento della tensione misurata ai campi del condensatore in funzione del tempo in seguito a una stimolazione impulsiva all'istante t=0 di ampiezza \SI{5}{\volt} e durata \SI{0.5}{\micro\second}. Frequenza di campionamento \SI{500}{\kilo\hertz}, 800 campioni. I punti sono dati sperimentali, mentre la linea continua è il fit della funzione $V_C(t+t_0)$. L'incertezza, calcolata a posteriori, è di $\sigma_{V_C} = \SI{30}{\micro\volt}$.}
+\label{fig:plot-time}
+\end{figure}
+
+I risultati del campionamento sono mostrati in Fig. \ref{fig:plot-time}, insieme a un fit della funzione $V_C(t)$ (\ref{eq:time_impulse}). Il segnale segue un moto oscillatorio che viene completamente smorzato in circa \SI{0.8}{\milli\second}. Lo pseudoperiodo è leggermente maggiore di \SI{0.1}{\milli\second}, in accordo con una frequenza di oscillazione attesa leggermente inferiore a \SI{10}{\kilo\hertz}. Si nota la presenza di un lieve sfasamento, probabilmente conseguenza del sistema di triggering. Il primo punto del campionamento è infatti leggermente superiore a \SI{0}{\volt}. Per tenerne conto in fase di fit, si è aggiunto un parametro $t_0$ alla funzione, sostituendo $t$ con $t+t_0$. I parametri restituiti dal fit sono riportati in Tab. \ref{tab:params}.
+
+Il fit è stato utilizzato per stimare l'incertezza sui dati raccolti. Supponendo che questa sia uguale per ogni punto, è stata calcolata dal chi quadro ridotto $\tilde{\chi}$ come $\sigma_{V_C} = \sqrt{\tilde{\chi}^2}$, ottenendo $\sigma_{V_C} = \SI{30}{\micro\volt}$.
+
+\subsection{Dominio della frequenza}
+\begin{figure}[t]
+\includestandalone[width=\linewidth]{Plotfreqs}
+\caption{Grafico dell'ampiezza (in nero) e della fase (in rosso) della trasformata di Fourier di $V_C$. I punti sono dati sperimentali, mentre la linea continua è il fit della funzione $H(\omega) \cdot e^{j\omega t_0}$ e la linea tratteggiata della funzione $H(\omega)$. La regione rossa rappresenta l'area compresa tra $\pm 1 \sigma$ di incertezza sulla fase. L'asse delle frequenze è in scala logaritmica.}
+\label{fig:plot-freqs}
+\end{figure}
+
+\begin{figure}[t]
+\includestandalone[width=\linewidth]{Real_Imag}
+\caption{Grafico della trasformata di Fourier di $V_C$. Sono indicate in nero la parte reale e in rosso la parte immaginaria. I punti sono stati ottenuti applicando una FFT ai dati sperimentali, mentre le linee continue sono il fit della funzione $H(\omega) \cdot e^{j\omega t_0}$. L'incertezza sui dati è di 0.00012, espressa nelle medesime unità arbitrarie.}
+\label{fig:plot-realimag}
+\end{figure}
+
+Per analizzare il circuito nel dominio della frequenza, è stata eseguita la FFT dei dati raccolti su $V_C$. L'errore stimato dal fit nel dominio del tempo è stato propagato nel dominio della frequenza secondo il metodo descritto in appendice \ref{app:error}. L'esito della trasformata è riportato espresso in termini di fase e ampiezza in Fig. \ref{fig:plot-freqs} e in termini di parte reale e immaginaria in Fig. \ref{fig:plot-realimag}. Dalla Fig. \ref{fig:plot-freqs} si può notare che l'ampiezza ha un massimo in prossimità della frequenza di risonanza attesa ($\nu_r^\text{exp} = \SI{8.82}{\kilo\hertz}$), mentre già a \SI{100}{\kilo\hertz} è prossima a zero, confermando la validità delle assunzioni fatte sul calcolo della trasformata di Fourier. La fase tende a 0 a basse frequenze e vale $-\pi/2$ in prossimità di $\nu_r^\text{exp}$, come atteso. Tuttavia non tende a $-\pi$ ad alte frequenze.
+
+Il segnale ad alte frequenze è soggetto contemporaneamente a fluttuazioni statistiche e a un errore sistematico. Superati i \SI{50}{\kilo\hertz}, i dati della fase sono soggetti a grandi fluttuazioni, ma allo stesso tempo l'errore associato aumenta sensibilmente. La fase tende inoltre a crescere invece che continuare a decrescere e convergere a $-\pi$. Questa tendenza è stata imputata allo sfasamento dovuto al trigger già discusso in precedenza. È noto infatti che $\fourier{f(t+t_0)} = \fourier{f(t)} \cdot e^{j \omega t_0}$ \cite{fourier}. Per tenerne conto, si è aggiunto un parametro $t_0$ al fit, che è stato eseguito sulla funzione $H(\omega) \cdot e^{j \omega t_0}$. Il fit è riportato sempre nelle Fig. \ref{fig:plot-freqs} e \ref{fig:plot-realimag}. I parametri restituiti sono riportati in Tab. \ref{tab:params}.
+
+Il fit è stato eseguito nel campo complesso, minimizzando il $\chi^2$ tra i dati restituiti dalla FFT e dalla funzione $H(\omega)$, e non fittando separatamente fase e ampiezza. Nel calcolo del $\chi^2$, per evitare di sommare numeri negativi, si sono sommati i quadrati delle parti reali e immaginarie dei dati. Dal confronto delle Fig. \ref{fig:plot-freqs} e \ref{fig:plot-realimag} è evidente che si sia scelto di utilizzare questo metodo, piuttosto che fittare fase e ampiezza, per la presenza di fluttuazioni ed incertezze minori.
+
+\subsection{Discussione}
+
+\section{Conclusioni}
+
+\appendixpage
+\appendix
+\section{Propagazione delle incertezze}
+\label{app:error}
+Tutte le incertezze sono state propagate sommando in quadratura:
+\begin{equation}
+\Delta q = \sqrt{\left(\pdv{q}{x}\right) ^2 \Delta x^2 + \left(\pdv{q}{y}\right) ^2 \Delta y^2+ \dots}
+\label{eq:sum_uncertainty}
+\end{equation}
+
+In particolare, per propagare le incertezza dei dati attraverso la trasformata di Fourier, si è utilizzato l'approccio proposto in \cite{uncertainty}. L'algoritmo FFT è un sistema efficiente per calcolare la DFT, la cui definizione (\ref{eq:dft}) può essere espressa in forma matriciale come
+\begin{gather}
+\bs{X} = A \bs{x} \label{eq:dft_matrix} \\
+X_k = \sum_{n=0}^{N-1} A_{kn} x_n \quad A_{kn} = e^{-2 \pi jkn / N}
+\end{gather}
+Una volta nota la dimensione $N$ del campione è possibile calcolare la matrice $A$. Successivamente conviene dividere la parte reale $A_\text{Re}$ da quella immaginaria $A_\text{Im}$, la (\ref{eq:dft_matrix}) diventa
+\begin{gather*}
+\bs{X_\text{Re}} = A_\text{Re} \bs{x} \\
+\bs{X_\text{Im}} = A_\text{Im} \bs{x} \\
+\bs{X} = \bs{X_\text{Re}} + j \bs{X_\text{Im}}
+\end{gather*}
+Applicando la formula (\ref{eq:sum_uncertainty}), è possibile determinare l'incertezza su $(X_k)_\text{Re}$ come
+\begin{equation}
+(\Delta X_k)_\text{Re} = \sqrt{\sum_{n=0}^{N-1} (A_{kn})_\text{Re}^2 \Delta x_n ^ 2}
+\end{equation}
+e allo stesso modo per la parte immaginaria. L'incertezza su ampiezza e fase sono poi determinate sempre attraverso la (\ref{eq:sum_uncertainty}).
+%%% Bibliografia
+\printbibliography
+
+\end{document}
